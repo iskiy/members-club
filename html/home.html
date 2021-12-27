@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <title> Members-club </title>
+</head>
+<body>
+<h1  class="text-center"> Welcome to the club! </h1>
+<hr>
+
+<div class="d-flex justify-content-center">
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" name="name" id="name" class="form-control" autocomplete="off">
+        <label for="email">Email:</label>
+        <input type="text" name="email" id="email" class="form-control" autocomplete="off">
+        <hr>
+        <a href="javascript:void(0);" class="btn btn-outline-secondary" id="sendBtn">Add member</a>
+        <a href="javascript:void(0);" class="btn btn-outline-secondary" id="clearBtn">Clear</a>
+
+    </div>
+</div>
+<div id = error_alert class="alert alert-danger" role="alert">
+    This is a danger alert—check it out!
+</div>
+<hr>
+<div class="d-flex justify-content-center">
+    <table class="table" id = "members">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Date</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+</body>
+<script>
+    document.addEventListener( "DOMContentLoaded", get_json_data, false );
+    var error_alert = document.getElementById("error_alert")
+    error_alert.style.display = "none";
+    let nameField = document.getElementById("name");
+    let emailField = document.getElementById("email");
+
+    function get_json_data(){
+        let request = new XMLHttpRequest();
+
+        request.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log('response text: ' + this.responseText)
+                var data = JSON.parse(this.responseText)
+                if (data != null) {
+                    append_json(data);
+                }
+            }
+        }
+        request.open("GET", "http://localhost:8080/members/", true);
+        request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        request.send();
+    }
+
+    function append_json(data){
+        let table = document.getElementById('members');
+        while(table.childElementCount >= 2){
+            table.removeChild(table.lastChild);
+        }
+        data.forEach(function(object) {
+            let tr = document.createElement('tr');
+            tr.innerHTML = '<td>' + object.name + '</td>' +
+                '<td>' + object.email + '</td>' +
+                '<td>' + object.date + '</td>';
+            table.appendChild(tr);
+        });
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", function () {
+        if ((nameField.value === "") || (emailField.value === "")) {
+            return false;
+        } else {
+            addMember()
+        }
+    })
+
+    document.getElementById("clearBtn").addEventListener("click", function () {
+        nameField.value = ""
+        emailField.value = ""
+    })
+
+    function addMember() {
+        let request = new XMLHttpRequest();
+        function reqReadyStateChange() {
+            if (request.readyState == 4) {
+                let status = request.status;
+                if (status == 200) {
+                    var data = JSON.parse(this.responseText);
+                    append_json(data);
+                } else if(status == 400){
+                    console.log(this.responseText);
+                    let error_data = JSON.parse(this.responseText)
+                    error_alert.innerHTML = error_data["error"];
+                    error_alert.style.display = "block"
+                    setTimeout(function (){
+                        error_alert.style.display = "none"
+                    }, 10000);
+                }
+                console.log(request.status)
+            }
+
+        }
+
+        let data = {
+            name: nameField.value,
+            email: emailField.value
+        };
+        let json = JSON.stringify(data)
+        request.open("POST", "http://localhost:8080/member");
+        request.setRequestHeader('Content-Type', 'application/json');
+        request.onreadystatechange = reqReadyStateChange;
+        request.send(json);
+    }
+
+</script>
+</html>
